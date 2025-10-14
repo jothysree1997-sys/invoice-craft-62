@@ -8,6 +8,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Plus, Upload, Trash2, Save, Printer, Download } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
+import html2canvas from 'html2canvas';
+import jsPDF from 'jspdf';
 
 interface InvoiceItem {
   id: string;
@@ -105,14 +107,62 @@ const Index = () => {
   };
 
   const handlePrint = () => {
-    window.print();
+    if (printRef.current) {
+      window.print();
+    }
   };
 
-  const handleDownload = () => {
-    toast({
-      title: 'Feature Coming Soon',
-      description: 'PDF download will be available soon!',
-    });
+  const handleDownload = async () => {
+    if (!printRef.current) return;
+    
+    try {
+      toast({
+        title: 'Generating PDF',
+        description: 'Please wait while we create your PDF...',
+      });
+
+      const element = printRef.current;
+      const canvas = await html2canvas(element, {
+        scale: 2,
+        useCORS: true,
+        logging: false,
+        backgroundColor: '#ffffff',
+      });
+
+      const imgData = canvas.toDataURL('image/png');
+      const pdf = new jsPDF('p', 'mm', 'a4');
+      
+      const imgWidth = 210; // A4 width in mm
+      const pageHeight = 297; // A4 height in mm
+      const imgHeight = (canvas.height * imgWidth) / canvas.width;
+      let heightLeft = imgHeight;
+      let position = 0;
+
+      pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+      heightLeft -= pageHeight;
+
+      // Add new pages if content is longer than one page
+      while (heightLeft > 0) {
+        position = heightLeft - imgHeight;
+        pdf.addPage();
+        pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+        heightLeft -= pageHeight;
+      }
+
+      pdf.save(`invoice-${invoiceNumber}.pdf`);
+      
+      toast({
+        title: 'PDF Downloaded',
+        description: 'Your invoice has been saved successfully.',
+      });
+    } catch (error) {
+      console.error('PDF generation failed:', error);
+      toast({
+        title: 'Download Failed',
+        description: 'Unable to generate PDF. Please try again.',
+        variant: 'destructive',
+      });
+    }
   };
 
   const themeClasses = {
