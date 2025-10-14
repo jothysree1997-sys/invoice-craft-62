@@ -5,9 +5,10 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Card } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Plus, Upload, Trash2, Save, Printer, Download } from 'lucide-react';
+import { Plus, Upload, Trash2, Save, Printer, Download, Package } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
+import { CatalogueModal } from '@/components/CatalogueModal';
 
 interface InvoiceItem {
   id: string;
@@ -24,6 +25,7 @@ const Index = () => {
   const printRef = useRef<HTMLDivElement>(null);
   const [theme, setTheme] = useState<InvoiceTheme>('classic');
   const [isSaved, setIsSaved] = useState(false);
+  const [showCatalogueModal, setShowCatalogueModal] = useState(false);
   const [logo, setLogo] = useState<string | null>(null);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
@@ -110,60 +112,23 @@ const Index = () => {
     }
   };
 
-  const handleDownload = async () => {
-    if (!printRef.current) return;
-    
-    try {
-      toast({
-        title: 'Generating PDF',
-        description: 'Please wait while we create your PDF...',
-      });
+  const handleDownload = () => {
+    handlePrint();
+  };
 
-      // Dynamically import to avoid build issues
-      const html2canvas = (await import('html2canvas')).default;
-      const jsPDF = (await import('jspdf')).default;
-
-      const element = printRef.current;
-      const canvas = await html2canvas(element, {
-        scale: 2,
-        useCORS: true,
-        logging: false,
-        backgroundColor: '#ffffff',
-      });
-
-      const imgData = canvas.toDataURL('image/png');
-      const pdf = new jsPDF('p', 'mm', 'a4');
-      
-      const imgWidth = 210;
-      const pageHeight = 297;
-      const imgHeight = (canvas.height * imgWidth) / canvas.width;
-      let heightLeft = imgHeight;
-      let position = 0;
-
-      pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
-      heightLeft -= pageHeight;
-
-      while (heightLeft > 0) {
-        position = heightLeft - imgHeight;
-        pdf.addPage();
-        pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
-        heightLeft -= pageHeight;
-      }
-
-      pdf.save(`invoice-${invoiceNumber}.pdf`);
-      
-      toast({
-        title: 'PDF Downloaded',
-        description: 'Your invoice has been saved successfully.',
-      });
-    } catch (error) {
-      console.error('PDF generation failed:', error);
-      toast({
-        title: 'Download Failed',
-        description: 'Unable to generate PDF. Please try again.',
-        variant: 'destructive',
-      });
-    }
+  const handleProductSelect = (product: { name: string; description: string; price: number }) => {
+    const newItem: InvoiceItem = {
+      id: Date.now().toString(),
+      description: product.name,
+      quantity: 1,
+      rate: product.price,
+      amount: product.price,
+    };
+    setItems([...items, newItem]);
+    toast({
+      title: 'Product Added',
+      description: `${product.name} has been added to the invoice.`,
+    });
   };
 
   const themeClasses = {
@@ -299,10 +264,16 @@ const Index = () => {
                   </tbody>
                 </table>
               </div>
-              <Button variant="outline" onClick={addLineItem} className="mt-4">
-                <Plus className="h-4 w-4 mr-2" />
-                Add Line Item
-              </Button>
+              <div className="flex gap-2 mt-4">
+                <Button variant="outline" onClick={addLineItem} className="flex-1 sm:flex-none">
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add Line Item
+                </Button>
+                <Button variant="outline" onClick={() => setShowCatalogueModal(true)} className="flex-1 sm:flex-none">
+                  <Package className="h-4 w-4 mr-2" />
+                  Catalogue Item
+                </Button>
+              </div>
             </Card>
 
             {/* Additional Charges */}
@@ -529,6 +500,12 @@ const Index = () => {
           </div>
         )}
       </main>
+
+      <CatalogueModal
+        open={showCatalogueModal}
+        onOpenChange={setShowCatalogueModal}
+        onSelectProduct={handleProductSelect}
+      />
     </div>
   );
 };
