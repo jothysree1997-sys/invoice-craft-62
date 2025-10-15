@@ -10,13 +10,14 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Package, Grid, List } from 'lucide-react';
+import { Package, Grid, List, Plus } from 'lucide-react';
 
 interface Product {
   id: string;
   name: string;
   description: string;
   price: number;
+  type: 'product' | 'service';
 }
 
 interface Catalogue {
@@ -39,9 +40,9 @@ const catalogues: Catalogue[] = [
     name: 'Office Supplies',
     description: 'Essential office items',
     products: [
-      { id: '1', name: 'Notebook A4', description: 'Premium quality notebook', price: 150 },
-      { id: '2', name: 'Pen Set', description: 'Ball point pens - pack of 10', price: 200 },
-      { id: '3', name: 'Stapler', description: 'Heavy duty stapler', price: 350 },
+      { id: '1', name: 'Notebook A4', description: 'Premium quality notebook', price: 150, type: 'product' },
+      { id: '2', name: 'Pen Set', description: 'Ball point pens - pack of 10', price: 200, type: 'product' },
+      { id: '3', name: 'Stapler', description: 'Heavy duty stapler', price: 350, type: 'product' },
     ],
   },
   {
@@ -49,9 +50,9 @@ const catalogues: Catalogue[] = [
     name: 'Electronics',
     description: 'Tech products and accessories',
     products: [
-      { id: '4', name: 'USB Cable', description: 'Type-C 2m cable', price: 500 },
-      { id: '5', name: 'Mouse Pad', description: 'Gaming mouse pad', price: 800 },
-      { id: '6', name: 'Keyboard Cover', description: 'Silicone keyboard protector', price: 300 },
+      { id: '4', name: 'USB Cable', description: 'Type-C 2m cable', price: 500, type: 'product' },
+      { id: '5', name: 'Mouse Pad', description: 'Gaming mouse pad', price: 800, type: 'product' },
+      { id: '6', name: 'Keyboard Cover', description: 'Silicone keyboard protector', price: 300, type: 'product' },
     ],
   },
   {
@@ -59,9 +60,11 @@ const catalogues: Catalogue[] = [
     name: 'Furniture',
     description: 'Office furniture items',
     products: [
-      { id: '7', name: 'Desk Lamp', description: 'LED desk lamp with dimmer', price: 2500 },
-      { id: '8', name: 'Chair Cushion', description: 'Ergonomic chair cushion', price: 1800 },
-      { id: '9', name: 'Monitor Stand', description: 'Adjustable monitor riser', price: 3200 },
+      { id: '7', name: 'Desk Lamp', description: 'LED desk lamp with dimmer', price: 2500, type: 'product' },
+      { id: '8', name: 'Chair Cushion', description: 'Ergonomic chair cushion', price: 1800, type: 'product' },
+      { id: '9', name: 'Monitor Stand', description: 'Adjustable monitor riser', price: 3200, type: 'product' },
+      { id: '10', name: 'Installation Service', description: 'Professional furniture installation', price: 1500, type: 'service' },
+      { id: '11', name: 'Maintenance Service', description: 'Annual maintenance contract', price: 5000, type: 'service' },
     ],
   },
 ];
@@ -69,12 +72,15 @@ const catalogues: Catalogue[] = [
 export function CatalogueModal({ open, onOpenChange, onSelectProduct }: CatalogueModalProps) {
   const [selectedCatalogue, setSelectedCatalogue] = useState<Catalogue | null>(null);
   const [viewMode, setViewMode] = useState<'card' | 'table'>('card');
+  const [filterType, setFilterType] = useState<'all' | 'product' | 'service'>('all');
 
   const handleProductSelect = (product: Product) => {
     onSelectProduct(product);
-    onOpenChange(false);
-    setSelectedCatalogue(null);
   };
+
+  const filteredProducts = selectedCatalogue?.products.filter(
+    (product) => filterType === 'all' || product.type === filterType
+  ) || [];
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -115,7 +121,7 @@ export function CatalogueModal({ open, onOpenChange, onSelectProduct }: Catalogu
           </div>
         ) : (
           <div className="space-y-4">
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between flex-wrap gap-2">
               <Button
                 variant="outline"
                 onClick={() => setSelectedCatalogue(null)}
@@ -124,38 +130,49 @@ export function CatalogueModal({ open, onOpenChange, onSelectProduct }: Catalogu
               </Button>
               <div className="flex gap-2">
                 <Button
-                  variant={viewMode === 'card' ? 'default' : 'outline'}
+                  variant={filterType === 'all' ? 'default' : 'outline'}
                   size="sm"
-                  onClick={() => setViewMode('card')}
+                  onClick={() => setFilterType('all')}
                 >
-                  <Grid className="h-4 w-4" />
+                  All
                 </Button>
                 <Button
-                  variant={viewMode === 'table' ? 'default' : 'outline'}
+                  variant={filterType === 'product' ? 'default' : 'outline'}
                   size="sm"
-                  onClick={() => setViewMode('table')}
+                  onClick={() => setFilterType('product')}
                 >
-                  <List className="h-4 w-4" />
+                  Products
+                </Button>
+                <Button
+                  variant={filterType === 'service' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setFilterType('service')}
+                >
+                  Services
                 </Button>
               </div>
             </div>
 
             {viewMode === 'card' ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {selectedCatalogue.products.map((product) => (
-                  <Card
-                    key={product.id}
-                    className="cursor-pointer hover:shadow-lg transition-shadow"
-                    onClick={() => handleProductSelect(product)}
-                  >
-                    <CardHeader>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                {filteredProducts.map((product) => (
+                  <Card key={product.id} className="flex flex-col">
+                    <CardHeader className="flex-1">
                       <CardTitle className="text-base">{product.name}</CardTitle>
-                      <CardDescription>{product.description}</CardDescription>
+                      <CardDescription className="line-clamp-2">{product.description}</CardDescription>
                     </CardHeader>
-                    <CardContent>
-                      <p className="text-lg font-semibold text-primary">
-                        ₹{product.price.toLocaleString('en-IN')}
-                      </p>
+                    <CardContent className="pt-0">
+                      <div className="flex items-center justify-between">
+                        <p className="text-lg font-semibold text-primary">
+                          ₹{product.price.toLocaleString('en-IN')}
+                        </p>
+                        <Button
+                          size="sm"
+                          onClick={() => handleProductSelect(product)}
+                        >
+                          <Plus className="h-4 w-4" />
+                        </Button>
+                      </div>
                     </CardContent>
                   </Card>
                 ))}
@@ -166,15 +183,17 @@ export function CatalogueModal({ open, onOpenChange, onSelectProduct }: Catalogu
                   <TableRow>
                     <TableHead>Product Name</TableHead>
                     <TableHead>Description</TableHead>
+                    <TableHead>Type</TableHead>
                     <TableHead className="text-right">Price</TableHead>
                     <TableHead></TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {selectedCatalogue.products.map((product) => (
+                  {filteredProducts.map((product) => (
                     <TableRow key={product.id}>
                       <TableCell className="font-medium">{product.name}</TableCell>
                       <TableCell>{product.description}</TableCell>
+                      <TableCell className="capitalize">{product.type}</TableCell>
                       <TableCell className="text-right">
                         ₹{product.price.toLocaleString('en-IN')}
                       </TableCell>
