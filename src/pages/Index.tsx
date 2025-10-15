@@ -12,6 +12,7 @@ import { CatalogueModal } from '@/components/CatalogueModal';
 
 interface InvoiceItem {
   id: string;
+  hsnCode: string;
   description: string;
   quantity: number;
   rate: number;
@@ -39,7 +40,7 @@ const Index = () => {
   const [dueDate, setDueDate] = useState('');
   const [poNumber, setPoNumber] = useState('');
   const [items, setItems] = useState<InvoiceItem[]>([
-    { id: '1', description: '', quantity: 1, rate: 0, amount: 0 }
+    { id: '1', hsnCode: '', description: '', quantity: 1, rate: 0, amount: 0 }
   ]);
   const [discount, setDiscount] = useState(0);
   const [tax, setTax] = useState(0);
@@ -59,7 +60,7 @@ const Index = () => {
   };
 
   const addLineItem = () => {
-    setItems([...items, { id: Date.now().toString(), description: '', quantity: 1, rate: 0, amount: 0 }]);
+    setItems([...items, { id: Date.now().toString(), hsnCode: '', description: '', quantity: 1, rate: 0, amount: 0 }]);
   };
 
   const updateLineItem = (id: string, field: keyof InvoiceItem, value: string | number) => {
@@ -119,6 +120,7 @@ const Index = () => {
   const handleProductSelect = (product: { name: string; description: string; price: number }) => {
     const newItem: InvoiceItem = {
       id: Date.now().toString(),
+      hsnCode: '',
       description: product.name,
       quantity: 1,
       rate: product.price,
@@ -156,73 +158,79 @@ const Index = () => {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Invoice Form */}
           <div className="lg:col-span-2 no-print space-y-6">
-            {/* Header Section */}
+            {/* Header Section - Two Column Layout */}
             <Card className="p-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                  <Label>Company Logo</Label>
-                  <div className="mt-2">
-                    {logo ? (
-                      <div className="relative w-40 h-40 border-2 border-dashed border-border rounded-lg p-2">
-                        <img src={logo} alt="Logo" className="w-full h-full object-contain" />
-                        <Button variant="destructive" size="sm" className="absolute -top-2 -right-2" onClick={() => setLogo(null)}>
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    ) : (
-                      <label className="flex items-center justify-center w-40 h-40 border-2 border-dashed border-border rounded-lg cursor-pointer hover:border-primary transition-colors">
-                        <div className="text-center">
-                          <Upload className="h-8 w-8 mx-auto mb-2 text-muted-foreground" />
-                          <span className="text-sm text-muted-foreground">Add Logo</span>
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                {/* Left Column */}
+                <div className="space-y-6">
+                  <div>
+                    <Label>Company Logo</Label>
+                    <div className="mt-2">
+                      {logo ? (
+                        <div className="relative w-40 h-40 border-2 border-dashed border-border rounded-lg p-2">
+                          <img src={logo} alt="Logo" className="w-full h-full object-contain" />
+                          <Button variant="destructive" size="sm" className="absolute -top-2 -right-2" onClick={() => setLogo(null)}>
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
                         </div>
-                        <input type="file" accept="image/*" onChange={handleLogoUpload} className="hidden" />
-                      </label>
-                    )}
+                      ) : (
+                        <label className="flex items-center justify-center w-40 h-40 border-2 border-dashed border-border rounded-lg cursor-pointer hover:border-primary transition-colors">
+                          <div className="text-center">
+                            <Upload className="h-8 w-8 mx-auto mb-2 text-muted-foreground" />
+                            <span className="text-sm text-muted-foreground">Add Logo</span>
+                          </div>
+                          <input type="file" accept="image/*" onChange={handleLogoUpload} className="hidden" />
+                        </label>
+                      )}
+                    </div>
+                  </div>
+
+                  <div>
+                    <Label className={cn(errors.from && "text-destructive")}>
+                      Who is this from? <span className="text-destructive">*</span>
+                    </Label>
+                    <Textarea value={from} onChange={(e) => setFrom(e.target.value)} placeholder="Your company name&#10;Address&#10;City, State ZIP" className={cn("mt-2 h-32", errors.from && "border-destructive")} />
+                    {errors.from && <p className="text-sm text-destructive mt-1">{errors.from}</p>}
+                  </div>
+
+                  <div>
+                    <Label className={cn(errors.proposalTo && "text-destructive")}>
+                      Proposal To <span className="text-destructive">*</span>
+                    </Label>
+                    <Textarea value={proposalTo} onChange={(e) => setProposalTo(e.target.value)} placeholder="Client name&#10;Address&#10;City, State ZIP" className={cn("mt-2 h-32", errors.proposalTo && "border-destructive")} />
+                    {errors.proposalTo && <p className="text-sm text-destructive mt-1">{errors.proposalTo}</p>}
                   </div>
                 </div>
-                <div className="space-y-4">
-                  <div>
-                    <Label>Invoice #</Label>
-                    <Input value={invoiceNumber} onChange={(e) => setInvoiceNumber(e.target.value)} placeholder="INV-001" />
+
+                {/* Right Column */}
+                <div className="space-y-6">
+                  <div className="space-y-4">
+                    <div>
+                      <Label>Invoice #</Label>
+                      <Input value={invoiceNumber} onChange={(e) => setInvoiceNumber(e.target.value)} placeholder="INV-001" />
+                    </div>
+                    <div>
+                      <Label>Date</Label>
+                      <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
+                    </div>
+                    <div>
+                      <Label>Payment Terms</Label>
+                      <Input value={paymentTerms} onChange={(e) => setPaymentTerms(e.target.value)} placeholder="Net 30" />
+                    </div>
+                    <div>
+                      <Label>Due Date</Label>
+                      <Input type="date" value={dueDate} onChange={(e) => setDueDate(e.target.value)} />
+                    </div>
+                    <div>
+                      <Label>PO Number</Label>
+                      <Input value={poNumber} onChange={(e) => setPoNumber(e.target.value)} placeholder="PO-001" />
+                    </div>
                   </div>
+
                   <div>
-                    <Label>Date</Label>
-                    <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
+                    <Label>Ship To (Optional)</Label>
+                    <Textarea value={shipTo} onChange={(e) => setShipTo(e.target.value)} placeholder="Shipping address&#10;City, State ZIP" className="mt-2 h-32" />
                   </div>
-                  <div>
-                    <Label>Payment Terms</Label>
-                    <Input value={paymentTerms} onChange={(e) => setPaymentTerms(e.target.value)} placeholder="Net 30" />
-                  </div>
-                  <div>
-                    <Label>Due Date</Label>
-                    <Input type="date" value={dueDate} onChange={(e) => setDueDate(e.target.value)} />
-                  </div>
-                  <div>
-                    <Label>PO Number</Label>
-                    <Input value={poNumber} onChange={(e) => setPoNumber(e.target.value)} placeholder="PO-001" />
-                  </div>
-                </div>
-              </div>
-              <div className="mt-6">
-                <div>
-                  <Label className={cn(errors.from && "text-destructive")}>
-                    Who is this from? <span className="text-destructive">*</span>
-                  </Label>
-                  <Textarea value={from} onChange={(e) => setFrom(e.target.value)} placeholder="Your company name&#10;Address&#10;City, State ZIP" className={cn("mt-2 h-32", errors.from && "border-destructive")} />
-                  {errors.from && <p className="text-sm text-destructive mt-1">{errors.from}</p>}
-                </div>
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6">
-                <div>
-                  <Label className={cn(errors.proposalTo && "text-destructive")}>
-                    Proposal To <span className="text-destructive">*</span>
-                  </Label>
-                  <Textarea value={proposalTo} onChange={(e) => setProposalTo(e.target.value)} placeholder="Client name&#10;Address&#10;City, State ZIP" className={cn("mt-2 h-32", errors.proposalTo && "border-destructive")} />
-                  {errors.proposalTo && <p className="text-sm text-destructive mt-1">{errors.proposalTo}</p>}
-                </div>
-                <div>
-                  <Label>Ship To (Optional)</Label>
-                  <Textarea value={shipTo} onChange={(e) => setShipTo(e.target.value)} placeholder="Shipping address&#10;City, State ZIP" className="mt-2 h-32" />
                 </div>
               </div>
             </Card>
@@ -234,6 +242,7 @@ const Index = () => {
                 <table className="w-full">
                   <thead>
                     <tr className="border-b">
+                      <th className="text-left py-2 px-2 w-28">HSN Code</th>
                       <th className="text-left py-2 px-2">Description</th>
                       <th className="text-right py-2 px-2 w-24">Quantity</th>
                       <th className="text-right py-2 px-2 w-32">Rate (₹)</th>
@@ -244,6 +253,9 @@ const Index = () => {
                   <tbody>
                     {items.map((item) => (
                       <tr key={item.id} className="border-b">
+                        <td className="py-2 px-2">
+                          <Input value={item.hsnCode} onChange={(e) => updateLineItem(item.id, 'hsnCode', e.target.value)} placeholder="HSN" className="border-0 focus-visible:ring-0" />
+                        </td>
                         <td className="py-2 px-2">
                           <Input value={item.description} onChange={(e) => updateLineItem(item.id, 'description', e.target.value)} placeholder="Item description" className="border-0 focus-visible:ring-0" />
                         </td>
@@ -433,6 +445,7 @@ const Index = () => {
                   <table className="w-full border-collapse">
                     <thead>
                       <tr className={cn("border-b-2", theme === 'modern' ? 'border-blue-300 bg-blue-50' : 'border-gray-300 bg-gray-50')}>
+                        <th className="text-left py-3 px-4 font-semibold">HSN Code</th>
                         <th className="text-left py-3 px-4 font-semibold">Description</th>
                         <th className="text-right py-3 px-4 font-semibold">Qty</th>
                         <th className="text-right py-3 px-4 font-semibold">Rate (₹)</th>
@@ -442,6 +455,7 @@ const Index = () => {
                     <tbody>
                       {items.map((item, index) => (
                         <tr key={item.id} className={cn("border-b", index % 2 === 0 ? 'bg-gray-50' : 'bg-white')}>
+                          <td className="py-3 px-4">{item.hsnCode || '-'}</td>
                           <td className="py-3 px-4">{item.description}</td>
                           <td className="text-right py-3 px-4">{item.quantity}</td>
                           <td className="text-right py-3 px-4">{item.rate.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
