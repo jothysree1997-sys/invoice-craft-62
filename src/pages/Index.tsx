@@ -203,7 +203,7 @@ const Index = () => {
                   </div>
                 </div>
               </div>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
+              <div className="mt-6">
                 <div>
                   <Label className={cn(errors.from && "text-destructive")}>
                     Who is this from? <span className="text-destructive">*</span>
@@ -211,6 +211,8 @@ const Index = () => {
                   <Textarea value={from} onChange={(e) => setFrom(e.target.value)} placeholder="Your company name&#10;Address&#10;City, State ZIP" className={cn("mt-2 h-32", errors.from && "border-destructive")} />
                   {errors.from && <p className="text-sm text-destructive mt-1">{errors.from}</p>}
                 </div>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6">
                 <div>
                   <Label className={cn(errors.proposalTo && "text-destructive")}>
                     Proposal To <span className="text-destructive">*</span>
