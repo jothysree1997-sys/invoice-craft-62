@@ -1,6 +1,8 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { cn } from '@/lib/utils';
+import { Button } from '@/components/ui/button';
+import { Printer, X } from 'lucide-react';
 
 interface InvoiceItem {
   id: string;
@@ -33,6 +35,8 @@ interface InvoiceData {
 const InvoicePreview = () => {
   const [searchParams] = useSearchParams();
   const [invoiceData, setInvoiceData] = useState<InvoiceData | null>(null);
+  const [isContentReady, setIsContentReady] = useState(false);
+  const contentRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const dataParam = searchParams.get('data');
@@ -46,9 +50,40 @@ const InvoicePreview = () => {
     }
   }, [searchParams]);
 
+  useEffect(() => {
+    if (invoiceData && contentRef.current) {
+      // Wait for images and content to load
+      const images = contentRef.current.getElementsByTagName('img');
+      const imagePromises = Array.from(images).map(img => {
+        if (img.complete) return Promise.resolve();
+        return new Promise(resolve => {
+          img.onload = resolve;
+          img.onerror = resolve;
+        });
+      });
+
+      Promise.all(imagePromises).then(() => {
+        // Small delay to ensure all rendering is complete
+        setTimeout(() => {
+          setIsContentReady(true);
+        }, 100);
+      });
+    }
+  }, [invoiceData]);
+
+  const handlePrint = () => {
+    if (isContentReady && contentRef.current) {
+      window.print();
+    }
+  };
+
+  const handleClose = () => {
+    window.close();
+  };
+
   if (!invoiceData) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <p className="text-muted-foreground">Loading invoice...</p>
       </div>
     );
@@ -753,8 +788,36 @@ const InvoicePreview = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-100 py-8">
-      {renderTheme()}
+    <div className="min-h-screen bg-gray-100">
+      {/* Toolbar - Hidden on print */}
+      <div className="no-print sticky top-0 z-50 bg-white border-b shadow-sm">
+        <div className="container mx-auto px-4 py-4 flex justify-between items-center">
+          <h2 className="text-lg font-semibold text-gray-800">Invoice Preview</h2>
+          <div className="flex gap-2">
+            <Button 
+              onClick={handlePrint} 
+              disabled={!isContentReady}
+              className="flex items-center gap-2"
+            >
+              <Printer className="h-4 w-4" />
+              {isContentReady ? 'Print' : 'Loading...'}
+            </Button>
+            <Button 
+              onClick={handleClose}
+              variant="outline"
+              className="flex items-center gap-2"
+            >
+              <X className="h-4 w-4" />
+              Close
+            </Button>
+          </div>
+        </div>
+      </div>
+
+      {/* Invoice Content - Printed */}
+      <div ref={contentRef} className="py-8 print-content">
+        {renderTheme()}
+      </div>
     </div>
   );
 };
