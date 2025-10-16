@@ -5,7 +5,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Card } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Plus, Upload, Trash2, Save, Printer, Download, Package } from 'lucide-react';
+import { Plus, Upload, Trash2, Save, Printer, Download, Package, Eye } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { CatalogueModal } from '@/components/CatalogueModal';
@@ -19,7 +19,7 @@ interface InvoiceItem {
   amount: number;
 }
 
-type InvoiceTheme = 'classic' | 'modern' | 'minimal';
+type InvoiceTheme = 'classic' | 'modern' | 'minimal' | 'modern-minimal' | 'corporate' | 'creative';
 
 const Index = () => {
   const { toast } = useToast();
@@ -115,6 +115,29 @@ const Index = () => {
 
   const handleDownload = () => {
     handlePrint();
+  };
+
+  const handlePreview = () => {
+    const invoiceData = {
+      logo,
+      from,
+      proposalTo,
+      shipTo,
+      invoiceNumber,
+      date,
+      paymentTerms,
+      dueDate,
+      poNumber,
+      items,
+      discount,
+      tax,
+      shipping,
+      bankDetails,
+      terms,
+      theme,
+    };
+    const encodedData = encodeURIComponent(JSON.stringify(invoiceData));
+    window.open(`/preview?data=${encodedData}`, '_blank');
   };
 
   const handleProductSelect = (product: { name: string; description: string; price: number }) => {
@@ -370,6 +393,9 @@ const Index = () => {
                       <SelectItem value="classic">Classic</SelectItem>
                       <SelectItem value="modern">Modern</SelectItem>
                       <SelectItem value="minimal">Minimal</SelectItem>
+                      <SelectItem value="modern-minimal">Modern Minimal</SelectItem>
+                      <SelectItem value="corporate">Corporate</SelectItem>
+                      <SelectItem value="creative">Creative</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -380,6 +406,10 @@ const Index = () => {
                   </Button>
                   {isSaved && (
                     <>
+                      <Button onClick={handlePreview} variant="outline" className="w-full">
+                        <Eye className="h-4 w-4 mr-2" />
+                        Preview in New Tab
+                      </Button>
                       <Button onClick={handlePrint} className="w-full bg-info hover:bg-info/90">
                         <Printer className="h-4 w-4 mr-2" />
                         Print Invoice
