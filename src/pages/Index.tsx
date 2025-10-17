@@ -5,7 +5,8 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Card } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Plus, Upload, Trash2, Save, Printer, Download, Package, Eye } from 'lucide-react';
+import { Plus, Upload, Trash2, Save, Printer, Download, Package, Eye, Sun, Moon } from 'lucide-react';
+import { useTheme } from 'next-themes';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { CatalogueModal } from '@/components/CatalogueModal';
@@ -47,6 +48,8 @@ const Index = () => {
   const [shipping, setShipping] = useState(0);
   const [bankDetails, setBankDetails] = useState('');
   const [terms, setTerms] = useState('');
+
+  const { theme: colorMode, setTheme: setColorMode } = useTheme();
 
   const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -171,9 +174,19 @@ const Index = () => {
   return (
     <div className="min-h-screen bg-background">
       <header className="border-b bg-card">
-        <div className="container mx-auto px-4 py-4">
-          <h1 className="text-2xl font-bold text-foreground">Invoice Generator</h1>
-          <p className="text-sm text-muted-foreground">Create professional invoices in minutes</p>
+        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-bold text-foreground">Invoice Generator</h1>
+            <p className="text-sm text-muted-foreground">Create professional invoices in minutes</p>
+          </div>
+          <Button
+            variant="outline"
+            size="icon"
+            aria-label="Toggle theme"
+            onClick={() => setColorMode(colorMode === 'dark' ? 'light' : 'dark')}
+          >
+            {colorMode === 'dark' ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+          </Button>
         </div>
       </header>
 

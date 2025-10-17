@@ -138,8 +138,16 @@ const InvoicePreview = () => {
 
   if (!invoiceData) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <p className="text-muted-foreground">Loading invoice...</p>
+      <div className="min-h-screen flex items-center justify-center bg-background px-4">
+        <div className="max-w-md text-center space-y-4">
+          <h2 className="text-xl font-semibold text-foreground">No invoice data to preview</h2>
+          <p className="text-muted-foreground">Please save your invoice and click Preview from the Invoice Generator page.</p>
+          <div className="flex justify-center gap-2">
+            <Button onClick={() => (window.location.href = '/')}>
+              Go to Invoice Form
+            </Button>
+          </div>
+        </div>
       </div>
     );
   }
@@ -843,7 +851,7 @@ const InvoicePreview = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-100">
+    <div className="min-h-screen bg-background">
       {/* Toolbar - Hidden on print */}
       <div className="no-print sticky top-0 z-50 bg-background border-b shadow-sm">
         <div className="container mx-auto px-4 py-4 flex justify-between items-center">
