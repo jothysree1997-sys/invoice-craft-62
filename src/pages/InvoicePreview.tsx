@@ -1,8 +1,11 @@
 import { useEffect, useState, useRef } from 'react';
 import { useSearchParams } from 'react-router-dom';
+import { useTheme } from 'next-themes';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
-import { Printer, X } from 'lucide-react';
+import { Printer, X, Download, Sun, Moon } from 'lucide-react';
+import jsPDF from 'jspdf';
+import html2canvas from 'html2canvas';
 
 interface InvoiceItem {
   id: string;
@@ -36,7 +39,9 @@ const InvoicePreview = () => {
   const [searchParams] = useSearchParams();
   const [invoiceData, setInvoiceData] = useState<InvoiceData | null>(null);
   const [isContentReady, setIsContentReady] = useState(false);
+  const [isDownloading, setIsDownloading] = useState(false);
   const contentRef = useRef<HTMLDivElement>(null);
+  const { theme: colorTheme, setTheme } = useTheme();
 
   useEffect(() => {
     const dataParam = searchParams.get('data');
@@ -79,6 +84,56 @@ const InvoicePreview = () => {
 
   const handleClose = () => {
     window.close();
+  };
+
+  const handleDownload = async () => {
+    if (!isContentReady || !contentRef.current || !invoiceData) return;
+    
+    setIsDownloading(true);
+    try {
+      // Create a temporary container with white background for PDF
+      const element = contentRef.current;
+      const canvas = await html2canvas(element, {
+        scale: 2,
+        useCORS: true,
+        backgroundColor: '#ffffff',
+        logging: false,
+      });
+
+      // A4 dimensions in mm
+      const imgWidth = 210;
+      const pageHeight = 297;
+      const imgHeight = (canvas.height * imgWidth) / canvas.width;
+      
+      const pdf = new jsPDF('p', 'mm', 'a4');
+      const imgData = canvas.toDataURL('image/png');
+      
+      let heightLeft = imgHeight;
+      let position = 0;
+
+      // Add first page
+      pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+      heightLeft -= pageHeight;
+
+      // Add additional pages if content is longer than one page
+      while (heightLeft >= 0) {
+        position = heightLeft - imgHeight;
+        pdf.addPage();
+        pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+        heightLeft -= pageHeight;
+      }
+
+      // Generate filename from invoice number or use default
+      const filename = invoiceData.invoiceNumber 
+        ? `Invoice-${invoiceData.invoiceNumber}.pdf`
+        : 'Invoice.pdf';
+      
+      pdf.save(filename);
+    } catch (error) {
+      console.error('Error generating PDF:', error);
+    } finally {
+      setIsDownloading(false);
+    }
   };
 
   if (!invoiceData) {
@@ -790,10 +845,27 @@ const InvoicePreview = () => {
   return (
     <div className="min-h-screen bg-gray-100">
       {/* Toolbar - Hidden on print */}
-      <div className="no-print sticky top-0 z-50 bg-white border-b shadow-sm">
+      <div className="no-print sticky top-0 z-50 bg-background border-b shadow-sm">
         <div className="container mx-auto px-4 py-4 flex justify-between items-center">
-          <h2 className="text-lg font-semibold text-gray-800">Invoice Preview</h2>
-          <div className="flex gap-2">
+          <h2 className="text-lg font-semibold">Invoice Preview</h2>
+          <div className="flex gap-2 items-center">
+            <Button 
+              onClick={() => setTheme(colorTheme === 'dark' ? 'light' : 'dark')}
+              variant="outline"
+              size="icon"
+              className="flex items-center gap-2"
+            >
+              {colorTheme === 'dark' ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+            </Button>
+            <Button 
+              onClick={handleDownload} 
+              disabled={!isContentReady || isDownloading}
+              variant="default"
+              className="flex items-center gap-2"
+            >
+              <Download className="h-4 w-4" />
+              {isDownloading ? 'Downloading...' : 'Download'}
+            </Button>
             <Button 
               onClick={handlePrint} 
               disabled={!isContentReady}
