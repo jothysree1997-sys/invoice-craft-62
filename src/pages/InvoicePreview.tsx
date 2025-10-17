@@ -95,22 +95,22 @@ const InvoicePreview = () => {
       
       // Capture with high quality
       const canvas = await html2canvas(element, {
-        scale: 2,
+        scale: 3,
         useCORS: true,
         backgroundColor: '#ffffff',
         logging: false,
-        windowWidth: element.scrollWidth,
-        windowHeight: element.scrollHeight,
       });
 
-      // A4 dimensions in mm and margins
+      // A4 dimensions in mm
       const a4Width = 210;
       const a4Height = 297;
-      const margin = 15; // 15mm margins on all sides
+      const margin = 10; // 10mm margins
+      
+      // Calculate content area
       const contentWidth = a4Width - (2 * margin);
       const contentHeight = a4Height - (2 * margin);
       
-      // Calculate scaled dimensions
+      // Calculate image dimensions to fit content area
       const imgWidth = contentWidth;
       const imgHeight = (canvas.height * contentWidth) / canvas.width;
       
@@ -118,30 +118,18 @@ const InvoicePreview = () => {
       const imgData = canvas.toDataURL('image/png', 1.0);
       
       let heightLeft = imgHeight;
-      let position = 0;
-      let pageNum = 0;
+      let position = margin; // Start at top margin
 
-      // Add pages as needed
-      while (heightLeft > 0 || pageNum === 0) {
-        if (pageNum > 0) {
-          pdf.addPage();
-        }
-        
-        // Calculate position for current page
-        const yPosition = pageNum === 0 ? margin : margin - (pageNum * contentHeight);
-        
-        // Add image with margins
-        pdf.addImage(
-          imgData, 
-          'PNG', 
-          margin, // x position (left margin)
-          yPosition, // y position (top margin on first page)
-          imgWidth, 
-          imgHeight
-        );
-        
+      // First page
+      pdf.addImage(imgData, 'PNG', margin, position, imgWidth, imgHeight);
+      heightLeft -= contentHeight;
+
+      // Add additional pages if needed
+      while (heightLeft > 0) {
+        position = heightLeft - imgHeight + margin; // Shift image up for next page
+        pdf.addPage();
+        pdf.addImage(imgData, 'PNG', margin, position, imgWidth, imgHeight);
         heightLeft -= contentHeight;
-        pageNum++;
       }
 
       // Generate filename from invoice number or use default
