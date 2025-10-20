@@ -14,6 +14,8 @@ interface InvoiceItem {
   quantity: number;
   rate: number;
   amount: number;
+  discount?: number;
+  tax?: number;
 }
 
 interface InvoiceData {
@@ -33,6 +35,7 @@ interface InvoiceData {
   bankDetails: string;
   terms: string;
   theme: string;
+  invoiceMode?: 'standard' | 'advanced';
 }
 
 const InvoicePreview = () => {
@@ -161,9 +164,18 @@ const InvoicePreview = () => {
     );
   }
 
-  const { logo, from, proposalTo, shipTo, invoiceNumber, date, paymentTerms, dueDate, poNumber, items, discount, tax, shipping, bankDetails, terms, theme } = invoiceData;
+  const { logo, from, proposalTo, shipTo, invoiceNumber, date, paymentTerms, dueDate, poNumber, items, discount, tax, shipping, bankDetails, terms, theme, invoiceMode = 'standard' } = invoiceData;
   const subtotal = items.reduce((sum, item) => sum + item.amount, 0);
-  const total = subtotal - discount + tax + shipping;
+  
+  // Calculate total based on mode
+  const total = invoiceMode === 'standard' 
+    ? subtotal - discount + tax + shipping
+    : items.reduce((sum, item) => {
+        const itemSubtotal = item.amount;
+        const itemDiscount = item.discount || 0;
+        const itemTax = item.tax || 0;
+        return sum + (itemSubtotal - itemDiscount + itemTax);
+      }, 0) + shipping;
 
   const renderClassicTheme = () => (
     <div className="w-full max-w-4xl mx-auto p-8 bg-white text-gray-800">
@@ -206,6 +218,12 @@ const InvoicePreview = () => {
               <th className="text-left py-3 px-4 font-semibold">Description</th>
               <th className="text-right py-3 px-4 font-semibold">Qty</th>
               <th className="text-right py-3 px-4 font-semibold">Rate (₹)</th>
+              {invoiceMode === 'advanced' && (
+                <>
+                  <th className="text-right py-3 px-4 font-semibold">Discount (₹)</th>
+                  <th className="text-right py-3 px-4 font-semibold">Tax (₹)</th>
+                </>
+              )}
               <th className="text-right py-3 px-4 font-semibold">Amount (₹)</th>
             </tr>
           </thead>
@@ -216,6 +234,12 @@ const InvoicePreview = () => {
                 <td className="py-3 px-4">{item.description}</td>
                 <td className="text-right py-3 px-4">{item.quantity}</td>
                 <td className="text-right py-3 px-4">{item.rate.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
+                {invoiceMode === 'advanced' && (
+                  <>
+                    <td className="text-right py-3 px-4">{(item.discount || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
+                    <td className="text-right py-3 px-4">{(item.tax || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
+                  </>
+                )}
                 <td className="text-right py-3 px-4 font-medium">{item.amount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
               </tr>
             ))}
@@ -228,13 +252,13 @@ const InvoicePreview = () => {
             <span className="text-gray-600">Subtotal:</span>
             <span className="font-medium">₹{subtotal.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
           </div>
-          {discount > 0 && (
+          {invoiceMode === 'standard' && discount > 0 && (
             <div className="flex justify-between py-2">
               <span className="text-gray-600">Discount:</span>
               <span className="font-medium text-red-600">-₹{discount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
             </div>
           )}
-          {tax > 0 && (
+          {invoiceMode === 'standard' && tax > 0 && (
             <div className="flex justify-between py-2">
               <span className="text-gray-600">Tax:</span>
               <span className="font-medium">₹{tax.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
@@ -312,6 +336,12 @@ const InvoicePreview = () => {
               <th className="text-left py-3 px-4 font-semibold">Description</th>
               <th className="text-right py-3 px-4 font-semibold">Qty</th>
               <th className="text-right py-3 px-4 font-semibold">Rate (₹)</th>
+              {invoiceMode === 'advanced' && (
+                <>
+                  <th className="text-right py-3 px-4 font-semibold">Discount (₹)</th>
+                  <th className="text-right py-3 px-4 font-semibold">Tax (₹)</th>
+                </>
+              )}
               <th className="text-right py-3 px-4 font-semibold">Amount (₹)</th>
             </tr>
           </thead>
@@ -322,6 +352,12 @@ const InvoicePreview = () => {
                 <td className="py-3 px-4">{item.description}</td>
                 <td className="text-right py-3 px-4">{item.quantity}</td>
                 <td className="text-right py-3 px-4">{item.rate.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
+                {invoiceMode === 'advanced' && (
+                  <>
+                    <td className="text-right py-3 px-4">{(item.discount || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
+                    <td className="text-right py-3 px-4">{(item.tax || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
+                  </>
+                )}
                 <td className="text-right py-3 px-4 font-medium">{item.amount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
               </tr>
             ))}
@@ -334,13 +370,13 @@ const InvoicePreview = () => {
             <span className="text-gray-600">Subtotal:</span>
             <span className="font-medium">₹{subtotal.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
           </div>
-          {discount > 0 && (
+          {invoiceMode === 'standard' && discount > 0 && (
             <div className="flex justify-between py-2">
               <span className="text-gray-600">Discount:</span>
               <span className="font-medium text-red-600">-₹{discount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
             </div>
           )}
-          {tax > 0 && (
+          {invoiceMode === 'standard' && tax > 0 && (
             <div className="flex justify-between py-2">
               <span className="text-gray-600">Tax:</span>
               <span className="font-medium">₹{tax.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
@@ -418,6 +454,12 @@ const InvoicePreview = () => {
               <th className="text-left py-3 px-4 font-semibold">Description</th>
               <th className="text-right py-3 px-4 font-semibold">Qty</th>
               <th className="text-right py-3 px-4 font-semibold">Rate (₹)</th>
+              {invoiceMode === 'advanced' && (
+                <>
+                  <th className="text-right py-3 px-4 font-semibold">Discount (₹)</th>
+                  <th className="text-right py-3 px-4 font-semibold">Tax (₹)</th>
+                </>
+              )}
               <th className="text-right py-3 px-4 font-semibold">Amount (₹)</th>
             </tr>
           </thead>
@@ -428,6 +470,12 @@ const InvoicePreview = () => {
                 <td className="py-3 px-4">{item.description}</td>
                 <td className="text-right py-3 px-4">{item.quantity}</td>
                 <td className="text-right py-3 px-4">{item.rate.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
+                {invoiceMode === 'advanced' && (
+                  <>
+                    <td className="text-right py-3 px-4">{(item.discount || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
+                    <td className="text-right py-3 px-4">{(item.tax || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
+                  </>
+                )}
                 <td className="text-right py-3 px-4 font-medium">{item.amount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
               </tr>
             ))}
@@ -440,13 +488,13 @@ const InvoicePreview = () => {
             <span className="text-gray-600">Subtotal:</span>
             <span className="font-medium">₹{subtotal.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
           </div>
-          {discount > 0 && (
+          {invoiceMode === 'standard' && discount > 0 && (
             <div className="flex justify-between py-2">
               <span className="text-gray-600">Discount:</span>
               <span className="font-medium text-red-600">-₹{discount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
             </div>
           )}
-          {tax > 0 && (
+          {invoiceMode === 'standard' && tax > 0 && (
             <div className="flex justify-between py-2">
               <span className="text-gray-600">Tax:</span>
               <span className="font-medium">₹{tax.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
@@ -538,6 +586,12 @@ const InvoicePreview = () => {
               <th className="text-left py-4 px-2 font-semibold text-sm">Description</th>
               <th className="text-right py-4 px-2 font-semibold text-sm">Qty</th>
               <th className="text-right py-4 px-2 font-semibold text-sm">Rate</th>
+              {invoiceMode === 'advanced' && (
+                <>
+                  <th className="text-right py-4 px-2 font-semibold text-sm">Discount</th>
+                  <th className="text-right py-4 px-2 font-semibold text-sm">Tax</th>
+                </>
+              )}
               <th className="text-right py-4 px-2 font-semibold text-sm">Amount</th>
             </tr>
           </thead>
@@ -548,6 +602,12 @@ const InvoicePreview = () => {
                 <td className="py-4 px-2 text-sm">{item.description}</td>
                 <td className="text-right py-4 px-2 text-sm">{item.quantity}</td>
                 <td className="text-right py-4 px-2 text-sm">₹{item.rate.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
+                {invoiceMode === 'advanced' && (
+                  <>
+                    <td className="text-right py-4 px-2 text-sm">₹{(item.discount || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
+                    <td className="text-right py-4 px-2 text-sm">₹{(item.tax || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
+                  </>
+                )}
                 <td className="text-right py-4 px-2 text-sm font-medium">₹{item.amount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
               </tr>
             ))}
@@ -562,13 +622,13 @@ const InvoicePreview = () => {
               <span className="text-gray-600">Subtotal</span>
               <span>₹{subtotal.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
             </div>
-            {discount > 0 && (
+            {invoiceMode === 'standard' && discount > 0 && (
               <div className="flex justify-between py-1 text-sm">
                 <span className="text-gray-600">Discount</span>
                 <span className="text-red-600">-₹{discount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
               </div>
             )}
-            {tax > 0 && (
+            {invoiceMode === 'standard' && tax > 0 && (
               <div className="flex justify-between py-1 text-sm">
                 <span className="text-gray-600">Tax</span>
                 <span>₹{tax.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
@@ -652,6 +712,12 @@ const InvoicePreview = () => {
                 <th className="text-left py-3 px-4 font-semibold text-sm">Description</th>
                 <th className="text-right py-3 px-4 font-semibold text-sm">Qty</th>
                 <th className="text-right py-3 px-4 font-semibold text-sm">Rate</th>
+                {invoiceMode === 'advanced' && (
+                  <>
+                    <th className="text-right py-3 px-4 font-semibold text-sm">Discount</th>
+                    <th className="text-right py-3 px-4 font-semibold text-sm">Tax</th>
+                  </>
+                )}
                 <th className="text-right py-3 px-4 font-semibold text-sm">Amount</th>
               </tr>
             </thead>
@@ -662,6 +728,12 @@ const InvoicePreview = () => {
                   <td className="py-3 px-4 text-sm">{item.description}</td>
                   <td className="text-right py-3 px-4 text-sm">{item.quantity}</td>
                   <td className="text-right py-3 px-4 text-sm">₹{item.rate.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
+                  {invoiceMode === 'advanced' && (
+                    <>
+                      <td className="text-right py-3 px-4 text-sm">₹{(item.discount || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
+                      <td className="text-right py-3 px-4 text-sm">₹{(item.tax || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
+                    </>
+                  )}
                   <td className="text-right py-3 px-4 text-sm font-medium">₹{item.amount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
                 </tr>
               ))}
@@ -678,13 +750,13 @@ const InvoicePreview = () => {
                 <span className="text-gray-700">Subtotal</span>
                 <span className="font-medium">₹{subtotal.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
               </div>
-              {discount > 0 && (
+              {invoiceMode === 'standard' && discount > 0 && (
                 <div className="flex justify-between text-sm">
                   <span className="text-gray-700">Discount</span>
                   <span className="font-medium text-red-600">-₹{discount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
                 </div>
               )}
-              {tax > 0 && (
+              {invoiceMode === 'standard' && tax > 0 && (
                 <div className="flex justify-between text-sm">
                   <span className="text-gray-700">Tax</span>
                   <span className="font-medium">₹{tax.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
@@ -778,6 +850,12 @@ const InvoicePreview = () => {
                 <th className="text-left py-3 px-3 font-semibold text-xs">Item</th>
                 <th className="text-right py-3 px-3 font-semibold text-xs">Qty</th>
                 <th className="text-right py-3 px-3 font-semibold text-xs">Rate</th>
+                {invoiceMode === 'advanced' && (
+                  <>
+                    <th className="text-right py-3 px-3 font-semibold text-xs">Disc.</th>
+                    <th className="text-right py-3 px-3 font-semibold text-xs">Tax</th>
+                  </>
+                )}
                 <th className="text-right py-3 px-3 font-semibold text-xs">Amount</th>
               </tr>
             </thead>
@@ -788,6 +866,12 @@ const InvoicePreview = () => {
                   <td className="py-3 px-3 text-sm">{item.description}</td>
                   <td className="text-right py-3 px-3 text-sm">{item.quantity}</td>
                   <td className="text-right py-3 px-3 text-sm">₹{item.rate.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
+                  {invoiceMode === 'advanced' && (
+                    <>
+                      <td className="text-right py-3 px-3 text-sm">₹{(item.discount || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
+                      <td className="text-right py-3 px-3 text-sm">₹{(item.tax || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
+                    </>
+                  )}
                   <td className="text-right py-3 px-3 text-sm font-medium">₹{item.amount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
                 </tr>
               ))}
@@ -802,13 +886,13 @@ const InvoicePreview = () => {
                 <span className="text-gray-600">Subtotal</span>
                 <span>₹{subtotal.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
               </div>
-              {discount > 0 && (
+              {invoiceMode === 'standard' && discount > 0 && (
                 <div className="flex justify-between text-sm">
                   <span className="text-gray-600">Discount</span>
                   <span className="text-red-600">-₹{discount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
                 </div>
               )}
-              {tax > 0 && (
+              {invoiceMode === 'standard' && tax > 0 && (
                 <div className="flex justify-between text-sm">
                   <span className="text-gray-600">Tax</span>
                   <span>₹{tax.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
